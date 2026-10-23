@@ -412,7 +412,7 @@
     if (!nameEl || !roleEl) return;
 
     var names = [nameEl.getAttribute('aria-label') || 'Anisha More'];
-    var roles = ['AI & Data Science Student', 'Python • SQL • Django', 'Exploring Data Analysis', 'PLC & HMI Automation'];
+    var roles = ['AI & Data Science Student', 'Python • SQL • Django', 'AI/ML • REST APIs • MQTT', 'PLC & HMI Automation'];
     if (prefersReducedMotion) { nameEl.textContent = names[0]; roleEl.textContent = roles[0]; return; }
 
     function typer(el, words, typeSpeed, hold, eraseSpeed) {
