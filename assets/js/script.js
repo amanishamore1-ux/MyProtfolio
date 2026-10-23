@@ -64,7 +64,8 @@
     function openMenu() {
       root.classList.add('is-open');
       toggleBtn.setAttribute('aria-expanded', 'true');
-      menu.focus({ preventScroll: true });
+      var selected = root.querySelector('[aria-selected="true"] button');
+      if (selected) selected.focus({ preventScroll: true });
     }
 
     function closeMenu(returnFocus) {
@@ -96,6 +97,20 @@
       if (event.key === 'Escape' && root.classList.contains('is-open')) {
         closeMenu(true);
       }
+    });
+
+    menu.addEventListener('keydown', function (event) {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Home' && event.key !== 'End') return;
+      event.preventDefault();
+      var index = options.indexOf(document.activeElement);
+      if (event.key === 'Home') index = 0;
+      else if (event.key === 'End') index = options.length - 1;
+      else index = (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+      options[index].focus();
+    });
+
+    root.addEventListener('focusout', function (event) {
+      if (!root.contains(event.relatedTarget)) closeMenu(false);
     });
 
     // restore saved theme (falls back to whatever the page shipped with)
@@ -144,10 +159,18 @@
 
     function hideScreen() {
       screen.classList.add('is-hidden');
+      try { window.sessionStorage.setItem('am-portfolio-intro-seen', 'true'); } catch (e) { /* storage unavailable */ }
       window.setTimeout(function () {
         screen.setAttribute('aria-hidden', 'true');
       }, 320);
     }
+
+    try {
+      if (window.sessionStorage.getItem('am-portfolio-intro-seen') === 'true') {
+        hideScreen();
+        return;
+      }
+    } catch (e) { /* storage unavailable */ }
 
     if (enterBtn) enterBtn.addEventListener('click', hideScreen);
     if (skipBtn) skipBtn.addEventListener('click', hideScreen);
@@ -176,6 +199,8 @@
 
       if (barFill) barFill.style.width = progress + '%';
       if (percentEl) percentEl.textContent = progress + '%';
+      var progressBar = screen.querySelector('[role="progressbar"]');
+      if (progressBar) progressBar.setAttribute('aria-valuenow', String(progress));
 
       if (statusEl) {
         for (var i = messages.length - 1; i >= 0; i--) {
@@ -220,7 +245,9 @@
       });
 
       listButtons.forEach(function (btn) {
-        btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
+        var isActive = btn.getAttribute('data-filter') === filter;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
 
       if (selectValue && label) selectValue.textContent = label;
@@ -411,9 +438,9 @@
     var roleEl = document.querySelector('[data-role-typing]');
     if (!nameEl || !roleEl) return;
 
-    var names = [nameEl.getAttribute('aria-label') || 'Anisha More'];
-    var roles = ['AI & Data Science Student', 'Python • SQL • Django', 'AI/ML • REST APIs • MQTT', 'PLC & HMI Automation'];
-    if (prefersReducedMotion) { nameEl.textContent = names[0]; roleEl.textContent = roles[0]; return; }
+    nameEl.textContent = nameEl.getAttribute('aria-label') || 'Anisha More';
+    var roles = ['AI & Data Science Student', 'Python • Django REST • SQL', 'AI/ML • Ollama • MQTT', 'PLC & HMI Automation'];
+    if (prefersReducedMotion) { roleEl.textContent = roles[0]; return; }
 
     function typer(el, words, typeSpeed, hold, eraseSpeed) {
       var wi=0, ci=0, deleting=false;
@@ -424,7 +451,6 @@
       }
       tick();
     }
-    typer(nameEl,names,85,1250,42);
     window.setTimeout(function(){ typer(roleEl,roles,55,1150,28); },450);
   }
   function initCardTilt() {
@@ -513,6 +539,18 @@
     if (backdrop) backdrop.addEventListener('click', closeResume);
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && viewer.classList.contains('is-open')) closeResume();
+      if (event.key === 'Tab' && viewer.classList.contains('is-open')) {
+        var focusable = Array.prototype.slice.call(viewer.querySelectorAll('a[href], button, iframe'));
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     });
   }
 
